@@ -27,7 +27,7 @@ public class ChatService {
 
     private static final String DELETED_MSG = "This message was deleted";
 
-    // ─── Reactions ──────────────────────────────────────────────────────
+
 
     @Transactional
     public ReactionDTO toggleReaction(Long userId, ReactionRequest req) {
@@ -40,7 +40,7 @@ public class ChatService {
             throw new RuntimeException("Cannot react to a deleted message");
         }
 
-        // Only sender or receiver of the message can react
+
         Long senderId = message.getSender().getId();
         Long receiverId = message.getReceiver().getId();
         if (!userId.equals(senderId) && !userId.equals(receiverId)) {
@@ -51,7 +51,6 @@ public class ChatService {
                 .findByMessageIdAndUserIdAndEmoji(req.getMessageId(), userId, req.getEmoji());
 
         if (existing.isPresent()) {
-            // Remove the reaction (toggle off)
             reactionRepository.delete(existing.get());
 
             ReactionNotificationDTO notification = ReactionNotificationDTO.builder()
@@ -64,9 +63,9 @@ public class ChatService {
 
             broadcastReaction(notification, senderId, receiverId);
 
-            return null; // indicates removal
+            return null;
         } else {
-            // Add the reaction
+
             MessageReaction reaction = MessageReaction.builder()
                     .message(message)
                     .user(user)
@@ -95,7 +94,7 @@ public class ChatService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
 
-        // Only sender or receiver can view reactions
+
         Long senderId = message.getSender().getId();
         Long receiverId = message.getReceiver().getId();
         if (!userId.equals(senderId) && !userId.equals(receiverId)) {
@@ -125,7 +124,7 @@ public class ChatService {
                 .build();
     }
 
-    // ─── Messaging (existing) ───────────────────────────────────────────
+
 
     @Transactional
     public MessageDTO sendMessage(Long senderId, SendMessageRequest req) {
@@ -246,7 +245,7 @@ public class ChatService {
             message.setDeleteType("FOR_EVERYONE");
             message.setContent(encryption.encrypt(DELETED_MSG));
 
-            // Remove all reactions when message is deleted for everyone
+
             reactionRepository.deleteByMessageId(req.getMessageId());
 
             messageRepository.save(message);
@@ -300,7 +299,7 @@ public class ChatService {
             content = decryptSafe(m.getContent());
         }
 
-        // Map reactions
+
         List<ReactionDTO> reactionDTOs = Collections.emptyList();
         if (m.getReactions() != null && !m.getReactions().isEmpty()) {
             reactionDTOs = m.getReactions().stream()
